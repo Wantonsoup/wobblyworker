@@ -75,52 +75,55 @@ private:
 	FVector2D CurrentInput;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float MoveForce = 90000.0f;
+	float MoveForce = 50000.0f; // Force applied to move the character, higher values = faster acceleration
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float MaxSpeed = 1200.0f;
-
+	float MaxSpeed = 1000.0f; // Maximum speed the character can reach
+	 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	float InputResponse = 3.0f;
+	float InputResponse = 1.0f; // How quickly the character responds to input changes
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drunk Effects", meta = (AllowPrivateAccess = "true"))
-	float WobbleStrength = 12.0f;
+	float WobbleStrength = 12.0f; // How much the character wobbles when idle
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drunk Effects", meta = (AllowPrivateAccess = "true"))
-	float WobbleSpeed = 4.0f;
+	float WobbleSpeed = 4.0f; // How fast the character wobbles when idle
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drunk Effects", meta = (AllowPrivateAccess = "true"))
-	float LeanAmount = 0.03f;
+	float LeanAmount = 0.03f; // How much the character leans based on movement input
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drunk Effects", meta = (AllowPrivateAccess = "true"))
-	float MaxLeanAngle = 18.0f;
+	float MaxLeanAngle = 18.0f; // In degrees
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float Balance = 100.0f;
+	float Balance = 100.0f; // 0 = fallen, 100 = perfect balance
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float UnsafeSpeed = 850.0f;
+	float UnsafeSpeed = 850.0f; // Speed above which the character starts losing balance. 
+								// This encourages players to move carefully rather than just spamming movement input.
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float BalanceLossRate = 18.0f;
+	float BalanceLossRate = 18.0f; // How quickly balance decreases when above UnsafeSpeed or leaning too much, higher values = faster loss
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float BalanceRecoveryRate = 8.0f;
+	float BalanceRecoveryRate = 8.0f; // How quickly balance recovers when below UnsafeSpeed and not leaning too much, higher values = faster recovery
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float LeanBalanceLossThreshold = 20.0f;
+	float LeanBalanceLossThreshold = 45.0f; // Lean angle (in degrees) above which the character starts losing balance. 
+											// This encourages players to not just hold a movement direction and lean indefinitely, but to also adjust their movement and lean angle.
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float LeanBalanceLossRate = 25.0f;
+	float LeanBalanceLossRate = 25.0f; // How quickly balance decreases based on how much the lean angle is above the LeanBalanceLossThreshold, higher values = faster loss
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Balance", meta = (AllowPrivateAccess = "true"))
-	float FallOverLeanThreshold = 45.0f;
+	float FallOverLeanThreshold = 90.0f; // Lean angle (in degrees) at which the character will immediately fall over, regardless of current balance. 
+	// This is to prevent players from just accepting a low balance and leaning as much as they want until they eventually fall over, by giving them a clear limit.
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stumble", meta = (AllowPrivateAccess = "true"))
-	float StumbleImpulse = 55000.0f;
+	float StumbleImpulse = 55000.0f; // Impulse applied in a random direction at regular intervals to make the character feel more "drunk". Higher values = stronger stumbles
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stumble", meta = (AllowPrivateAccess = "true"))
-	float StumbleInterval = 2.0f;
+	float StumbleInterval = 2.0f; // Time in seconds between stumble impulses. Lower values = more frequent stumbles
 
 	float StumbleTimer = 0.0f;
 

@@ -3,6 +3,16 @@
 	"EngineAssociation": "{DFA574DD-48DB-D870-3CB0-F68C7970D0C1}",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "wobblyworker",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",

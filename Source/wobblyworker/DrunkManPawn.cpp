@@ -82,7 +82,7 @@ void ADrunkManPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bHasFallen)
+	if (bHasFallen || bIsRagdolling || bIsGettingUp)
 	{
 		return;
 	}
@@ -298,23 +298,129 @@ void ADrunkManPawn::UpdateVisualLean(float DeltaTime)
 
 void ADrunkManPawn::FallOver()
 {
+	if (bHasFallen)
+	{
+		return;
+	}
+
 	bHasFallen = true;
+	bIsRagdolling = true;
+	bIsGettingUp = false;
 
-	PhysicsSphere->AddImpulse(
-		FVector(0.0f, 0.0f, 30000.0f) +
-		(-GetActorForwardVector() * 40000.0f)
+	if (PhysicsSphere)
+	{
+		PhysicsSphere->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+		PhysicsSphere->SetSimulatePhysics(false);
+		PhysicsSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (DrunkManMesh)
+	{
+		DrunkManMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+		DrunkManMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+		DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		DrunkManMesh->SetAllBodiesSimulatePhysics(true);
+		DrunkManMesh->SetSimulatePhysics(true);
+		DrunkManMesh->WakeAllRigidBodies();
+
+		DrunkManMesh->bBlendPhysics = true;
+	}
+
+	GetWorldTimerManager().SetTimer(
+		GetUpTimerHandle,
+		this,
+		&ADrunkManPawn::StartGetUp,
+		2.0f,
+		false
 	);
 
-	DrunkManMesh->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	DrunkManMesh->SetSimulatePhysics(true);
+	UE_LOG(LogTemp, Warning, TEXT("FallOver called. Balance: %.1f, Speed: %.1f, Location Z: %.1f"), Balance, PhysicsSphere->GetPhysicsLinearVelocity().Size(), GetActorLocation().Z);
 
-	UE_LOG(LogTemp, Warning, TEXT("FallOver called. Balance: %.1f, Speed: %.1f, Location Z: %.1f"),
-		Balance,
-		PhysicsSphere->GetPhysicsLinearVelocity().Size(),
-		GetActorLocation().Z
+}
+
+void ADrunkManPawn::StartGetUp()
+{
+	if (!DrunkManMesh || !VisualRoot)
+	{
+		return;
+	}
+
+	bIsRagdolling = false;
+	bIsGettingUp = true;
+
+	// 1. Stop ragdoll physics completely
+	DrunkManMesh->SetAllBodiesSimulatePhysics(false);
+	DrunkManMesh->SetSimulatePhysics(false);
+	DrunkManMesh->WakeAllRigidBodies();
+	DrunkManMesh->bBlendPhysics = false;
+
+	// 2. Stop ragdoll collision
+	DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// 3. Reattach mesh to your visual root
+	DrunkManMesh->AttachToComponent(
+		VisualRoot,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
 	);
 
+	// 4. Reset mesh position/rotation
+	DrunkManMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -45.0f));
+	DrunkManMesh->SetRelativeRotation(FRotator::ZeroRotator);
+
+	// 5. Put the mesh back into animation blueprint mode
+	DrunkManMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+	// 6. Force the animation system to update
+	DrunkManMesh->RefreshBoneTransforms();
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			2.0f,
+			FColor::Yellow,
+			TEXT("StartGetUp: physics off, animation should play now")
+		);
+	}
+
+	
+}
+
+void ADrunkManPawn::FinishGetUp()
+{
+	bHasFallen = false;
+	bIsRagdolling = false;
+	bIsGettingUp = false;
+
+	if (PhysicsSphere)
+	{
+		PhysicsSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		PhysicsSphere->SetSimulatePhysics(true);
+		PhysicsSphere->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	}
+
+	if (DrunkManMesh)
+	{
+		DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		DrunkManMesh->SetSimulatePhysics(false);
+		DrunkManMesh->SetAllBodiesSimulatePhysics(false);
+		DrunkManMesh->bBlendPhysics = false;
+		DrunkManMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	}
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			2.0f,
+			FColor::Green,
+			TEXT("FinishGetUp: back to movement")
+		);
+	}
 }
 
 FVector2D ADrunkManPawn::GetMovementVelocity() const
@@ -348,5 +454,20 @@ FVector2D ADrunkManPawn::GetMovementVelocity() const
 		FMath::Clamp(RightAmount / AnimScale, -1.0f, 1.0f),
 		FMath::Clamp(ForwardAmount / AnimScale, -1.0f, 1.0f)
 	);
+}
+
+bool ADrunkManPawn::IsRagdolling() const
+{
+	return bIsRagdolling;
+}
+
+bool ADrunkManPawn::IsGettingUp() const
+{
+	return bIsGettingUp;
+}
+
+EGetUpDirection ADrunkManPawn::GetGetUpDirection() const
+{
+	return GetUpDirection;
 }
 

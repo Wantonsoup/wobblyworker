@@ -317,3 +317,36 @@ void ADrunkManPawn::FallOver()
 
 }
 
+FVector2D ADrunkManPawn::GetMovementVelocity() const
+{
+	if(!PhysicsSphere)
+	{
+		return FVector2D::ZeroVector;
+	}
+
+	const FVector Velocity = PhysicsSphere->GetPhysicsLinearVelocity();
+
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+	if (!PlayerController)
+	{
+		return FVector2D::ZeroVector;
+	}
+
+	const FRotator ControlRotation = PlayerController->GetControlRotation();
+	const FRotator YawRotation(0.0f, ControlRotation.Yaw, 0.0f);
+
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+	const float ForwardAmount = FVector::DotProduct(Velocity, ForwardDirection);
+	const float RightAmount = FVector::DotProduct(Velocity, ForwardDirection);
+
+	const float AnimScale = 600.0f; // Adjust this value to control how much the velocity affects the animation
+
+	return FVector2D(
+		FMath::Clamp(RightAmount / AnimScale, -1.0f, 1.0f),
+		FMath::Clamp(ForwardAmount / AnimScale, -1.0f, 1.0f)
+	);
+}
+

@@ -47,8 +47,12 @@ private:
 	void ApplyStumble(float DeltaTime);
 	void UpdateBalance(float DeltaTime);
 	void UpdateVisualLean(float DeltaTime);
+
+	UFUNCTION(BlueprintCallable)
 	void FallOver();
 
+	UFUNCTION(BlueprintPure, Category = "Movement")
+	FVector2D GetMovementVelocity() const;
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* PhysicsSphere;
@@ -73,6 +77,7 @@ private:
 
 	FVector2D TargetInput;
 	FVector2D CurrentInput;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float MoveForce = 50000.0f; // Force applied to move the character, higher values = faster acceleration

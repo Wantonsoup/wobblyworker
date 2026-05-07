@@ -20,6 +20,16 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 
+UENUM(BlueprintType)
+enum class EGetUpDirection : uint8
+{
+	None,
+	Forward,
+	Backward,
+	
+};
+
+
 UCLASS()
 class WOBBLYWORKER_API ADrunkManPawn : public APawn
 {
@@ -51,8 +61,28 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void FallOver();
 
-	UFUNCTION(BlueprintPure, Category = "Movement")
+	UFUNCTION(BlueprintCallable)
+	void StartGetUp();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishGetUp();
+
+
+	UFUNCTION(BlueprintPure)
 	FVector2D GetMovementVelocity() const;
+
+	
+
+	UFUNCTION(BlueprintPure)
+	bool IsRagdolling() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsGettingUp() const;
+
+	UFUNCTION(BlueprintPure)
+	EGetUpDirection GetGetUpDirection() const;
+
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* PhysicsSphere;
@@ -77,7 +107,6 @@ private:
 
 	FVector2D TargetInput;
 	FVector2D CurrentInput;
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float MoveForce = 50000.0f; // Force applied to move the character, higher values = faster acceleration
@@ -131,6 +160,17 @@ private:
 	float StumbleInterval = 2.0f; // Time in seconds between stumble impulses. Lower values = more frequent stumbles
 
 	float StumbleTimer = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	EGetUpDirection GetUpDirection = EGetUpDirection::None;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	bool bIsRagdolling = false;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	bool bIsGettingUp = false;
+
+	FTimerHandle GetUpTimerHandle;
 
 	bool bHasFallen = false;
 };

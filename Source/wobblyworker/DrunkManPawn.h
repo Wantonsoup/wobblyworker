@@ -71,7 +71,8 @@ private:
 	UFUNCTION(BlueprintPure)
 	FVector2D GetMovementVelocity() const;
 
-	
+	UFUNCTION(BlueprintPure)
+	bool IsFallen() const;
 
 	UFUNCTION(BlueprintPure)
 	bool IsRagdolling() const;
@@ -84,13 +85,14 @@ private:
 
 	
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USphereComponent* PhysicsSphere;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USceneComponent* VisualRoot;
 
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* DrunkManMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")

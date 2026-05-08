@@ -376,6 +376,8 @@ void ADrunkManPawn::StartGetUp()
 	// 6. Force the animation system to update
 	DrunkManMesh->RefreshBoneTransforms();
 
+	bHasFallen = false;
+	#
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(
@@ -391,26 +393,69 @@ void ADrunkManPawn::StartGetUp()
 
 void ADrunkManPawn::FinishGetUp()
 {
-	bHasFallen = false;
+	if (!DrunkManMesh || !PhysicsSphere || !VisualRoot)
+	{
+		return;
+	}
+
+	// Stop any held/leftover movement.
+	TargetInput = FVector2D::ZeroVector;
+	CurrentInput = FVector2D::ZeroVector;
+
+	// Get where the mesh currently is after the get-up animation.
+	const FVector MeshWorldLocation = DrunkManMesh->GetComponentLocation();
+	const FRotator MeshWorldRotation = DrunkManMesh->GetComponentRotation();
+
+	bHasFallen = true;
 	bIsRagdolling = false;
 	bIsGettingUp = false;
 
-	if (PhysicsSphere)
-	{
-		PhysicsSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		PhysicsSphere->SetSimulatePhysics(true);
-		PhysicsSphere->SetPhysicsLinearVelocity(FVector::ZeroVector);
-		PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-	}
+	// Stop mesh physics completely.
+	DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	DrunkManMesh->SetSimulatePhysics(false);
+	DrunkManMesh->SetAllBodiesSimulatePhysics(false);
+	DrunkManMesh->bBlendPhysics = false;
+	DrunkManMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 
-	if (DrunkManMesh)
-	{
-		DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		DrunkManMesh->SetSimulatePhysics(false);
-		DrunkManMesh->SetAllBodiesSimulatePhysics(false);
-		DrunkManMesh->bBlendPhysics = false;
-		DrunkManMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
-	}
+	// Move the pawn/sphere to the mesh location before turning sphere physics back on.
+	SetActorLocation(
+		MeshWorldLocation,
+		false,
+		nullptr,
+		ETeleportType::TeleportPhysics
+	);
+
+	PhysicsSphere->SetWorldLocation(
+		MeshWorldLocation,
+		false,
+		nullptr,
+		ETeleportType::TeleportPhysics
+	);
+
+	// keeps character facing yaw direction
+
+	VisualRoot->SetWorldRotation(
+		FRotator(0.0f, MeshWorldRotation.Yaw, 0.0f)
+	);
+
+	// Reattach the mesh to the visual root cleanly.
+	DrunkManMesh->AttachToComponent(
+		VisualRoot,
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
+	);
+
+	// Put mesh back to its normal gameplay offset.
+	DrunkManMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -45.0f));
+	DrunkManMesh->SetRelativeRotation(FRotator::ZeroRotator);
+
+	// Now turn the sphere back on.
+	PhysicsSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	PhysicsSphere->SetSimulatePhysics(true);
+
+	PhysicsSphere->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+
+	bHasFallen = false;
 
 	if (GEngine)
 	{
@@ -418,19 +463,24 @@ void ADrunkManPawn::FinishGetUp()
 			-1,
 			2.0f,
 			FColor::Green,
-			TEXT("FinishGetUp: back to movement")
+			TEXT("FinishGetUp: sphere moved to mesh location")
 		);
 	}
 }
 
 FVector2D ADrunkManPawn::GetMovementVelocity() const
 {
-	if(!PhysicsSphere)
+	if (!PhysicsSphere || bHasFallen || bIsRagdolling || bIsGettingUp)
 	{
 		return FVector2D::ZeroVector;
 	}
 
 	const FVector Velocity = PhysicsSphere->GetPhysicsLinearVelocity();
+
+	if (Velocity.Size() < 80.0f)
+	{
+		return FVector2D::ZeroVector;
+	}
 
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
@@ -454,6 +504,11 @@ FVector2D ADrunkManPawn::GetMovementVelocity() const
 		FMath::Clamp(RightAmount / AnimScale, -1.0f, 1.0f),
 		FMath::Clamp(ForwardAmount / AnimScale, -1.0f, 1.0f)
 	);
+}
+
+bool ADrunkManPawn::IsFallen() const
+{
+	return bHasFallen;
 }
 
 bool ADrunkManPawn::IsRagdolling() const

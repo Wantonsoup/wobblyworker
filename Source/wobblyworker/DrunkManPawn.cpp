@@ -84,6 +84,14 @@ void ADrunkManPawn::Tick(float DeltaTime)
 
 	if (bHasFallen || bIsRagdolling || bIsGettingUp)
 	{
+		if (Balance < 100.0f)
+		{
+			// Increases Balance by 100 units per second
+			Balance += 30.0f * DeltaTime;
+
+			// Ensure it doesn't exceed 100
+			Balance = FMath::Clamp(Balance, 0.0f, 100.0f);
+		}
 		return;
 	}
 
@@ -240,15 +248,6 @@ void ADrunkManPawn::UpdateBalance(float DeltaTime)
 
 	Balance = FMath::Clamp(Balance, 0.0f, 100.0f);
 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			1,
-			0.0f,
-			FColor::Green,
-			FString::Printf(TEXT("Balance: %.1f | Lean: %.1f | Speed: %.1f"), Balance, LeanAngle, Speed)
-		);
-	}
 
 	if (Balance <= 0.0f || LeanAngle >= FallOverLeanThreshold)
 	{
@@ -327,6 +326,14 @@ void ADrunkManPawn::FallOver()
 		DrunkManMesh->WakeAllRigidBodies();
 
 		DrunkManMesh->bBlendPhysics = true;
+		FVector FallForce = GetActorForwardVector() * 30.0f;
+		FallForce += FVector(0.0f, 0.0f, 4.0f);
+
+		DrunkManMesh->AddImpulse(
+			FallForce,
+			NAME_None,
+			true
+		);
 	}
 
 	GetWorldTimerManager().SetTimer(
@@ -337,8 +344,7 @@ void ADrunkManPawn::FallOver()
 		false
 	);
 
-	UE_LOG(LogTemp, Warning, TEXT("FallOver called. Balance: %.1f, Speed: %.1f, Location Z: %.1f"), Balance, PhysicsSphere->GetPhysicsLinearVelocity().Size(), GetActorLocation().Z);
-
+	
 }
 
 void ADrunkManPawn::StartGetUp()
@@ -387,6 +393,8 @@ void ADrunkManPawn::FinishGetUp()
 	{
 		return;
 	}
+
+	
 
 	// Stop any held/leftover movement.
 	TargetInput = FVector2D::ZeroVector;
@@ -447,23 +455,7 @@ void ADrunkManPawn::FinishGetUp()
 	PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 
 	bHasFallen = false;
-
-	GetWorldTimerManager().SetTimer(
-		GetUpTimerHandle,
-		
-		2.0f,
-		false
-	);
-
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			2.0f,
-			FColor::Green,
-			TEXT("FinishGetUp: sphere moved to mesh location")
-		);
-	}
+	
 }
 
 FVector2D ADrunkManPawn::GetMovementVelocity() const
@@ -518,6 +510,7 @@ bool ADrunkManPawn::IsGettingUp() const
 {
 	return bIsGettingUp;
 }
+
 
 EGetUpDirection ADrunkManPawn::GetGetUpDirection() const
 {

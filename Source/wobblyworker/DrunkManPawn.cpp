@@ -351,43 +351,33 @@ void ADrunkManPawn::StartGetUp()
 	bIsRagdolling = false;
 	bIsGettingUp = true;
 
-	// 1. Stop ragdoll physics completely
+	// Stop ragdoll physics completely
 	DrunkManMesh->SetAllBodiesSimulatePhysics(false);
 	DrunkManMesh->SetSimulatePhysics(false);
 	DrunkManMesh->WakeAllRigidBodies();
 	DrunkManMesh->bBlendPhysics = false;
 
-	// 2. Stop ragdoll collision
+	// Stop ragdoll collision
 	DrunkManMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	// 3. Reattach mesh to your visual root
+	// Reattach mesh to your visual root
 	DrunkManMesh->AttachToComponent(
 		VisualRoot,
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale
 	);
 
-	// 4. Reset mesh position/rotation
+	// Reset mesh position/rotation
 	DrunkManMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -45.0f));
 	DrunkManMesh->SetRelativeRotation(FRotator::ZeroRotator);
 
-	// 5. Put the mesh back into animation blueprint mode
+	// Put the mesh back into animation blueprint mode
 	DrunkManMesh->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 
-	// 6. Force the animation system to update
+	// Force the animation system to update
 	DrunkManMesh->RefreshBoneTransforms();
 
 	bHasFallen = false;
-	#
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			2.0f,
-			FColor::Yellow,
-			TEXT("StartGetUp: physics off, animation should play now")
-		);
-	}
-
+	
 	
 }
 
@@ -432,7 +422,7 @@ void ADrunkManPawn::FinishGetUp()
 		ETeleportType::TeleportPhysics
 	);
 
-	// keeps character facing yaw direction
+	// keeps character facing yaw
 
 	VisualRoot->SetWorldRotation(
 		FRotator(0.0f, MeshWorldRotation.Yaw, 0.0f)
@@ -447,6 +437,7 @@ void ADrunkManPawn::FinishGetUp()
 	// Put mesh back to its normal gameplay offset.
 	DrunkManMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -45.0f));
 	DrunkManMesh->SetRelativeRotation(FRotator::ZeroRotator);
+	DrunkManMesh->SetWorldRotation(FRotator(0.0f, -90.0f, 0.0f));
 
 	// Now turn the sphere back on.
 	PhysicsSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -456,6 +447,13 @@ void ADrunkManPawn::FinishGetUp()
 	PhysicsSphere->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 
 	bHasFallen = false;
+
+	GetWorldTimerManager().SetTimer(
+		GetUpTimerHandle,
+		
+		2.0f,
+		false
+	);
 
 	if (GEngine)
 	{
